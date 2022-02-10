@@ -13,6 +13,7 @@ CREATE TABLE users(
 
 CREATE TABLE posts(
   id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  -- connect the user to their posts
   user_id BIGINT REFERENCES users(id) NOT NULL, 
   post TEXT NOT NULL
 );
