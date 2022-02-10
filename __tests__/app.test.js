@@ -3,6 +3,15 @@ const setup = require('../data/setup');
 const request = require('supertest');
 const app = require('../lib/app');
 
+const agent = request.agent(app);
+jest.mock('../lib/utils/user.js');
+
+const registerAndLogin = async () => {
+  const agent = request.agent(app);
+  const user = await agent.get('/api/v1/users/login/callback?code=42');
+  return [agent, user];
+};
+
 describe('backend routes', () => {
   beforeEach(() => {
     return setup(pool);
@@ -12,19 +21,18 @@ describe('backend routes', () => {
     pool.end();
   });
   it('should redirect upon login', async () => {
-    const req = await request(app).get('/api/v1/users/login');
+    const req = await agent.get('/api/v1/users/login');
 
     expect(req.header.location).toMatch(
-      /https:\/\/github.com\/login\/oauth\/authorize\?client_id=[\w\d]+&redirect_uri=http:\/\/localhost:7890\/api\/v1\/github\/login\/callback&scope=user/i
+      /https:\/\/github.com\/login\/oauth\/authorize\?client_id=[\w\d]+&redirect_uri=http:\/\/localhost:7890\/api\/v1\/users\/login\/callback&scope=user/i
     );
   });
-  it.skip('should login & redirect to dashboard', async () => {
-    const req = await request
-      .agent(app)
-      .get('/api/v1/github/login/callback?code=42')
+  it('should login & redirect to dashboard', async () => {
+    const user = await agent
+      .get('/api/v1/users/login/callback?code=42')
       .redirects(1);
 
-    expect(req.body).toEqual({
+    expect(user.body).toEqual({
       id: expect.any(String),
       username: 'fake_login',
       email: 's@s.com',
